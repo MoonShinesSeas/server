@@ -37,7 +37,7 @@ func MyGenerateKey()(string,string,error){
 }
 
 func switchPublicKey(value []byte) (*sm2.PublicKey,error) {
-	public_key_bytes := base64ToPublicKey(string(value))
+	public_key_bytes := Base64ToPublicKey(string(value))
 	if public_key_bytes == nil {
 		return nil,nil
 	}
@@ -201,7 +201,7 @@ func publicKeyToBase64(jsonBytes []byte) (string, error) {
 	return base64Str, nil
 }
 
-func base64ToPublicKey(decodedBytes string) []byte {
+func Base64ToPublicKey(decodedBytes string) []byte {
 	//编码Base64字符串为原始字节
 	publicKeyBytes, err := base64.StdEncoding.DecodeString(decodedBytes)
 	if err != nil {
@@ -210,3 +210,19 @@ func base64ToPublicKey(decodedBytes string) []byte {
 	return publicKeyBytes
 }
 
+func EncryptBalance(balance int64, pub *sm2.PublicKey) (string, error) {
+	// 使用bytes.Buffer来存储转换后的字节
+	var buf bytes.Buffer
+	// 将int64类型的num写入buffer中
+	if err := binary.Write(&buf, binary.BigEndian, balance); err != nil {
+		return "", err
+	}
+	// cipertext,err:=sm2.Encrypt(pub,buf.Bytes(),sm2.C1C2C3)
+	plaintext := buf.Bytes()
+	cipertext, err := HomoEncrypt(pub, plaintext)
+	if err != nil {
+		return "", fmt.Errorf("encrypt balance error:%v", err)
+	}
+	hexCiperText := hex.EncodeToString(cipertext)
+	return hexCiperText, nil
+}
